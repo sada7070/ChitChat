@@ -31,5 +31,5 @@ model Chat {
   message     String
   userId      String
   user        User          @relation(fields: [userId], references: [id])        // refering User table
-  room        Room          @relation(fields: [roomId], references: [id])        // refering  table
+  room        Room          @relation(fields: [roomId], references: [id])        // refering table
 }
