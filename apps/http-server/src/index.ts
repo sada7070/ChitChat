@@ -1,5 +1,5 @@
 import "dotenv/config"
-import { signupSchema } from "@repo/common/zod";
+import { signinSchema, signupSchema } from "@repo/common/zod";
 import express from "express";
 import bcrypt from "bcrypt";
 import { prismaClient } from "@repo/db/prismaClient";
@@ -34,12 +34,54 @@ app.post("/signup", async (req, res) => {
         }, process.env.JWT_SECRET!);
 
         res.status(200).json({
-            token: token,
-            message: "Signup succussful."
+            message: "Signup succussful.",
+            token: token
         })
     } catch {
         res.status(409).json({
             message: "Email already exist."
+        })
+    }
+})
+
+app.post("/signin", async (req, res) => {
+    const parsedData = signinSchema.safeParse(req.body);
+
+    if(!parsedData.success) {
+        res.status(411).json({
+            message: "Incorrect format."
+        })
+        return;
+    }
+
+    const user = await prismaClient.user.findFirst({
+        where: {
+            email: parsedData.data.email
+        }
+    })
+
+    if(!user) {
+        res.status(401).json({
+            message: "Email does not exist."
+        })
+        return;
+    }
+
+    const passwordMatched = await bcrypt.compare(parsedData.data.password, user.password);
+
+    if(!passwordMatched) {
+        res.status(401).json({
+            message: "Incorrect password."
+        })
+        return;
+    } else {
+        const token = jwt.sign({
+            userId: user.id
+        }, process.env.JWT_SECRET!);
+
+        res.status(200).json({
+            message: "Signin succussful.",
+            token: token
         })
     }
 })
