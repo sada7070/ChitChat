@@ -1,27 +1,29 @@
-import { NextFunction, Request, Response } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import { NextFunction, Request, Response } from "express"
+import jwt, { JwtPayload } from "jsonwebtoken"
 
 interface AuthenticatedRequest extends Request {
-    userId: string
+    userId?: string
 }
 
-export const middleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const token = req.headers["authorization"];
-    if(!token) {
-        res.status(401).json({
+export const userMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const header = req.headers["authorization"];
+
+    if(!header) {
+        res.status(403).json({
             message: "Unauthorized."
         })
         return;
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+
+    const decoded = jwt.verify(header as string, process.env.JWT_SECRET!) as JwtPayload;
 
     if(decoded) {
-        req.userId = decoded.userId
+        req.userId = String(decoded.userId);
         next();
     } else {
-        res.status(401).json({
-            message: "Unauthorized. Invalid token."
-        });
+        res.status(403).json({
+            message: "Unauthorized: Invalid token."
+        })
     }
 }
 
